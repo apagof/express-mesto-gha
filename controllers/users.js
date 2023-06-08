@@ -61,6 +61,7 @@ function cachingDecorator(func) {
 
 function updateUserData(req, res, next, args) {
   User.findByIdAndUpdate(req.user._id, args, { new: true, runValidators: true })
+    .orFail()
     .then((user) => next(res.send({ data: user })))
     .catch((err) => {
       if (err instanceof mongoose.Error.DocumentNotFoundError) {
