@@ -15,7 +15,6 @@ const auth = require('../middlewares/auth');
 router.post('/signup', celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30).optional(),
-    // eslint-disable-next-line no-useless-escape
     avatar: Joi.string().regex(LINK_REGULAR).optional(),
     about: Joi.string().min(2).max(30).optional(),
     email: Joi.string().required().email(),
@@ -31,9 +30,6 @@ router.post('/signin', celebrate({
 }), login);
 
 router.use(auth);
-
-// Так как используется хранение токена в cookies,
-// то можно будет добавить роут signout, который очищал бы куки
 
 router.get('/signout', (req, res) => {
   res.clearCookie('jwt').send({ message: 'Выход' });
