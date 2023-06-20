@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Card = require('../models/card');
 const NotFoundError = require('../errors/notFoundError');
-const ForbiddenError = require('../errors/forbidden');
+const ForbiddenError = require('../errors/forbiddenError');
 const ValidationError = require('../errors/ValidationError');
 
 module.exports.getCards = (req, res, next) => {
