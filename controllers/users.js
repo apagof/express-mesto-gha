@@ -1,27 +1,38 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const {
-  VALIDATION_ERROR,
-  NOT_FOUND_ERROR,
-  REFERENCE_ERROR,
-} = require('../errors/errorsCodes');
+const NotFoundError = require('../errors/not-found-err');
+const ConflictError = require('../errors/conflict-err');
+const ValidationError = require('../errors/validation-err');
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
-    .then((users) => res.send({ data: users }))
-    .catch(() => res.status(REFERENCE_ERROR).send({ message: 'Произошла ошибка по умолчанию' }));
+    .then((users) => res.send(users))
+    .catch(next);
 };
 
-module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
+module.exports.createUser = (req, res, next) => {
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
 
-  User.create({ name, about, avatar })
-    .then((user) => res.send({ data: user }))
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    }))
+    .then((user) => {
+      const { ...userData } = user.toObject();
+      delete userData.password;
+      res.status(201).send({ data: userData });
+    })
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
-        res.status(VALIDATION_ERROR).send({ message: 'Переданы некорректные данные при создании пользователя' });
+        next(new ValidationError('Переданы некорректные данные при создании пользователя'));
+      } else if (err.code === 11000) {
+        next(new ConflictError('Пользователь с данным email уже существует'));
       } else {
-        res.status(REFERENCE_ERROR).send({ message: 'Произошла ошибка по умолчанию' });
+        next(err);
       }
     });
 };
@@ -30,16 +41,16 @@ module.exports.getUserById = (req, res, next) => {
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
-        res.status(NOT_FOUND_ERROR).send({ message: 'Пользователь по указанному _id не найден.' });
+        throw new NotFoundError('Пользователь по указанному _id не найден');
       } else {
-        next(res.send({ data: user }));
+        next(res.send(user));
       }
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.CastError) {
-        res.status(VALIDATION_ERROR).send({ message: 'Переданы некорректные данные _id' });
+        next(new ValidationError('Переданы некорректные данные _id'));
       } else {
-        res.status(REFERENCE_ERROR).send({ message: 'Произошла ошибка по умолчанию' });
+        next(err);
       }
     });
 };
@@ -61,15 +72,14 @@ function cachingDecorator(func) {
 
 function updateUserData(req, res, next, args) {
   User.findByIdAndUpdate(req.user._id, args, { new: true, runValidators: true })
-    .orFail()
     .then((user) => next(res.send({ data: user })))
     .catch((err) => {
-      if (err instanceof mongoose.Error.DocumentNotFoundError) {
-        res.status(NOT_FOUND_ERROR).send({ message: 'Пользователь с указанным _id не найден.' });
-      } else if (err instanceof mongoose.Error.ValidationError) {
-        res.status(VALIDATION_ERROR).send({ message: 'Переданы некорректные данные при обновлении профиля.' });
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new ValidationError('Переданы некорректные данные'));
+      } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFoundError('Пользователь с указанным _id не найден'));
       } else {
-        res.status(REFERENCE_ERROR).send({ message: 'Произошла ошибка по умолчанию' });
+        next(err);
       }
     });
 }
@@ -82,4 +92,19 @@ module.exports.updateProfile = (req, res, next) => {
 module.exports.updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
   cachingDecorator(updateUserData(req, res, next, { avatar }));
+};
+
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'some-secret-key');
+      res.cookie('jwt', token, {
+        maxAge: 3600000,
+        httpOnly: true,
+        sameSite: true,
+      });
+      res.send({ token });
+    })
+    .catch(next);
 };
