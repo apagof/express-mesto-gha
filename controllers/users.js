@@ -1,10 +1,11 @@
+/* eslint-disable import/no-extraneous-dependencies */
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const NotFoundError = require('../errors/not-found-err');
-const ConflictError = require('../errors/conflict-err');
-const ValidationError = require('../errors/validation-err');
+const NotFoundError = require('../errors/notFound');
+const ConflictError = require('../errors/conflict');
+const ValidationError = require('../errors/validation');
 
 module.exports.getUsers = (req, res, next) => {
   User.find({})
