@@ -12,6 +12,18 @@ module.exports.getUsers = (req, res, next) => {
     .catch(next);
 };
 
+module.exports.getCurrentUser = (req, res, next) => {
+  User.findById(req.user._id)
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError('Пользователь по указанному _id не найден');
+      } else {
+        next(res.send(user));
+      }
+    })
+    .catch(next);
+};
+
 module.exports.createUser = (req, res, next) => {
   const {
     name, about, avatar, email, password,
@@ -98,8 +110,16 @@ module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .then((user) => {
+    // аутентификация успешна! пользователь в переменной user
+      // создадим токен
       const token = jwt.sign({ _id: user._id }, 'some-secret-key');
+
+      // вернём токен
+
+      // отправим токен, браузер сохранит его в куках
+
       res.cookie('jwt', token, {
+        // token - наш JWT токен, который мы отправляем
         maxAge: 3600000,
         httpOnly: true,
         sameSite: true,
