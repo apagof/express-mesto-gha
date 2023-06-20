@@ -7,7 +7,7 @@ const usersRouter = require('./users');
 const cardsRouter = require('./cards');
 
 const { createUser, login } = require('../controllers/users');
-const NotFoundError = require('../errors/notFound');
+const NotFoundError = require('../errors/notFoundError');
 const { LINK_REGULAR } = require('../consts');
 
 const auth = require('../middlewares/auth');

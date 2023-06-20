@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const NotFoundError = require('../errors/notFound');
-const ConflictError = require('../errors/conflict');
-const ValidationError = require('../errors/validation');
+const NotFoundError = require('../errors/notFoundError');
+const ConflictError = require('../errors/ConflictError');
+const ValidationError = require('../errors/ValidationError');
 
 module.exports.getUsers = (req, res, next) => {
   User.find({})
