@@ -20,8 +20,7 @@ const userSchema = new mongoose.Schema({
   avatar: {
     type: String,
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
-    // eslint-disable-next-line
-    match: LINK_REGULAR
+    match: LINK_REGULAR,
   },
   email: {
     type: String,
@@ -39,7 +38,6 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-// eslint-disable-next-line func-names
 userSchema.statics.findUserByCredentials = function (email, password) {
   return this.findOne({ email }).select('+password')
     .then((user) => {
@@ -52,7 +50,7 @@ userSchema.statics.findUserByCredentials = function (email, password) {
           if (!matched) {
             throw new UnauthorizedError('Неправильные почта или пароль');
           }
-          return user; // теперь user доступен
+          return user;
         });
     });
 };

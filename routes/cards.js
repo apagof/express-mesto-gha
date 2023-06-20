@@ -17,7 +17,6 @@ router.get('/', getCards);
 router.post('/', celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30).required(),
-    // eslint-disable-next-line no-useless-escape
     link: Joi.string().regex(LINK_REGULAR).required(),
   }),
 }), createCard);
