@@ -1,4 +1,4 @@
-const { REFERENCE_ERROR } = require('../errors/referenceError');
+const { REFERENCE_ERROR } = require('../errors/reference-err');
 
 const errorsHandler = (err, req, res, next) => {
   const statusCode = err.statusCode || REFERENCE_ERROR;
