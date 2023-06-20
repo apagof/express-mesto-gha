@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 const Card = require('../models/card');
-const NotFound = require('../errors/notFound');
-const Forbidden = require('../errors/forbidden');
-const Validation = require('../errors/validation');
+const NotFoundError = require('../errors/notFound');
+const ForbiddenError = require('../errors/forbidden');
+const ValidationError = require('../errors/validation');
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
@@ -13,11 +13,12 @@ module.exports.getCards = (req, res, next) => {
 
 module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
+
   Card.create({ name, link, owner: req.user._id })
     .then((card) => res.send({ data: card }))
     .catch((err) => {
-      if (err instanceof mongoose.Error.Validation) {
-        next(new Validation('Переданы некорректные данные при создании карточки'));
+      if (err instanceof mongoose.Error.ValidationError) {
+        next(new ValidationError('Переданы некорректные данные при создании карточки'));
       } else {
         next(err);
       }
@@ -28,11 +29,11 @@ module.exports.deleteCardById = (req, res, next) => {
   Card.findById(req.params.cardId)
     .then((card) => {
       if (!card) {
-        throw new NotFound('Карточка с указанным _id не найдена');
+        throw new NotFoundError('Карточка с указанным _id не найдена');
       } else {
         const cardOwner = card.owner.toString();
         if (req.user._id !== cardOwner) {
-          throw new Forbidden('У вас нет прав на удаление данной карточки');
+          throw new ForbiddenError('У вас нет прав на удаление данной карточки');
         } else {
           return Card.findByIdAndRemove(req.params.cardId);
         }
@@ -51,14 +52,14 @@ module.exports.likeCard = (req, res, next) => Card.findByIdAndUpdate(
 )
   .then((card) => {
     if (!card) {
-      throw new NotFound('Передан несуществующий _id карточки');
+      throw new NotFoundError('Передан несуществующий _id карточки');
     } else {
       next(res.send({ data: card }));
     }
   })
   .catch((err) => {
     if (err instanceof mongoose.Error.CastError) {
-      next(new Validation('Переданы некорректные данные для постановки лайка'));
+      next(new ValidationError('Переданы некорректные данные для постановки лайка'));
     } else {
       next(err);
     }
@@ -71,14 +72,14 @@ module.exports.dislikeCard = (req, res, next) => Card.findByIdAndUpdate(
 )
   .then((card) => {
     if (!card) {
-      throw new NotFound('Передан несуществующий _id карточки');
+      throw new NotFoundError('Передан несуществующий _id карточки');
     } else {
       next(res.send({ data: card }));
     }
   })
   .catch((err) => {
     if (err instanceof mongoose.Error.CastError) {
-      next(new Validation('Переданы некорректные данные для снятия лайка'));
+      next(new ValidationError('Переданы некорректные данные для снятия лайка'));
     } else {
       next(err);
     }
